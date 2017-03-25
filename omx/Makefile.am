@@ -64,8 +64,16 @@ noinst_HEADERS = \
 	gstomxanalogaudiosink.h \
 	gstomxhdmiaudiosink.h 	
 
+if USE_OMX_TARGET_TIZONIA
+if HAVE_EXTERNAL_OMX
+    OMX_INCLUDEPATH = -I/usr/local/include/tizonia
+else
+    OMX_INCLUDEPATH = -I$(top_srcdir)/omx/openmax/tizonia
+endif
+else
 if !HAVE_EXTERNAL_OMX
-OMX_INCLUDEPATH = -I$(abs_srcdir)/openmax
+    OMX_INCLUDEPATH = -I$(abs_srcdir)/openmax
+endif
 endif
 
 libgstomx_la_CFLAGS = \

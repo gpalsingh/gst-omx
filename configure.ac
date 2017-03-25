@@ -169,21 +169,59 @@ AC_ARG_WITH([omx-header-path],
 if test x"$omx_header_path" != x"none"; then
     CPPFLAGS="$CPPFLAGS -I$omx_header_path"
 fi
-dnl Check for external OpenMAX IL headers
-AC_CHECK_HEADER([OMX_Core.h], [HAVE_EXTERNAL_OMX=yes], [HAVE_EXTERNAL_OMX=no], [AC_INCLUDES_DEFAULT])
-AM_CONDITIONAL(HAVE_EXTERNAL_OMX, test "x$HAVE_EXTERNAL_OMX" = "xyes")
+AC_ARG_WITH([omx-target],
+        AS_HELP_STRING([--with-omx-target],[Use this OpenMAX IL target (generic, bellagio, rpi, tizonia)]),
+        [ac_cv_omx_target="$withval"], [ac_cv_omx_target="none"])
 
-dnl Our internal OpenMAX IL headers have OMX_VideoExt.h
-HAVE_VIDEO_EXT=yes
-if test "x$HAVE_EXTERNAL_OMX" = "xyes"; then
-    AC_CHECK_HEADER([OMX_VideoExt.h], [HAVE_VIDEO_EXT=yes], [HAVE_VIDEO_EXT=no], [AC_INCLUDES_DEFAULT])
+ac_cv_omx_target_struct_packing="none"
+AC_MSG_NOTICE([Using $ac_cv_omx_target as OpenMAX IL target])
+case "${ac_cv_omx_target}" in
+  generic)
+    AC_DEFINE(USE_OMX_TARGET_GENERIC, 1, [Use generic OpenMAX IL target])
+    ;;
+  rpi)
+    AC_DEFINE(USE_OMX_TARGET_RPI, 1, [Use RPi OpenMAX IL target])
+    AC_DEFINE(OMX_SKIP64BIT, 1, [Required by the RPi implementation])
+    ac_cv_omx_target_struct_packing=4
+    ;;
+  bellagio)
+    AC_DEFINE(USE_OMX_TARGET_BELLAGIO, 1, [Use Bellagio OpenMAX IL target])
+    ;;
+  tizonia)
+    AC_DEFINE(USE_OMX_TARGET_TIZONIA, 1, [Use Tizonia OpenMAX IL target])
+    ;;
+  none|*)
+    AC_ERROR([invalid OpenMAX IL target, you must specify one of --with-omx-target={generic,rpi,bellagio,tizonia}])
+    ;;
+esac
+AM_CONDITIONAL(USE_OMX_TARGET_GENERIC, test "x$ac_cv_omx_target" = "xgeneric")
+AM_CONDITIONAL(USE_OMX_TARGET_BELLAGIO, test "x$ac_cv_omx_target" = "xbellagio")
+AM_CONDITIONAL(USE_OMX_TARGET_RPI, test "x$ac_cv_omx_target" = "xrpi")
+AM_CONDITIONAL(USE_OMX_TARGET_TIZONIA, test "x$ac_cv_omx_target" = "xtizonia")
+
+if test "x$ac_cv_omx_target" = "xtizonia"; then
+    OMX_DIR="tizonia/"
 fi
 
-VIDEO_HEADERS="#include <OMX_Video.h>"
-if test "x$HAVE_VIDEO_EXT" = "xyes"; then
+dnl Check for external OpenMAX IL headers
+AC_CHECK_HEADER([$OMX_DIR"OMX_Core.h"], [HAVE_EXTERNAL_OMX=yes], [HAVE_EXTERNAL_OMX=no], [AC_INCLUDES_DEFAULT])
+AM_CONDITIONAL(HAVE_EXTERNAL_OMX, test "x$HAVE_EXTERNAL_OMX" = "xyes")
+
+dnl Our internal OpenMAX IL 1.1.2 headers have OMX_VideoExt.h
+if test "x$USE_OMX_TARGET_TIZONIA" = "xyes"; then
+    HAVE_VIDEO_EXT=no
+else
+    HAVE_VIDEO_EXT=yes
+fi
+if test "x$HAVE_EXTERNAL_OMX" = "xyes"; then
+    AC_CHECK_HEADER([$OMX_DIR"OMX_VideoExt.h"], [HAVE_VIDEO_EXT=yes], [HAVE_VIDEO_EXT=no], [AC_INCLUDES_DEFAULT])
+fi
+
+VIDEO_HEADERS="#include <$OMX_DIR""OMX_Video.h>"
+if "x$HAVE_VIDEO_EXT" = "xyes"; then
     AC_DEFINE(HAVE_VIDEO_EXT, 1, [OpenMAX IL has OMX_VideoExt.h header])
     VIDEO_HEADERS="$VIDEO_HEADERS
-#include <OMX_VideoExt.h>
+#include <$OMX_DIR""OMX_VideoExt.h>
 "
 fi
 
@@ -219,32 +257,6 @@ AC_ARG_ENABLE(Bsymbolic,
                            AC_MSG_RESULT(no)
                            enable_Bsymbolic=no)
                LDFLAGS="${SAVED_LDFLAGS}" LIBS="${SAVED_LIBS}"])
-
-AC_ARG_WITH([omx-target],
-        AS_HELP_STRING([--with-omx-target],[Use this OpenMAX IL target (generic, bellagio, rpi)]),
-        [ac_cv_omx_target="$withval"], [ac_cv_omx_target="none"])
-
-ac_cv_omx_target_struct_packing="none"
-AC_MSG_NOTICE([Using $ac_cv_omx_target as OpenMAX IL target])
-case "${ac_cv_omx_target}" in
-  generic)
-    AC_DEFINE(USE_OMX_TARGET_GENERIC, 1, [Use generic OpenMAX IL target])
-    ;;
-  rpi)
-    AC_DEFINE(USE_OMX_TARGET_RPI, 1, [Use RPi OpenMAX IL target])
-    AC_DEFINE(OMX_SKIP64BIT, 1, [Required by the RPi implementation])
-    ac_cv_omx_target_struct_packing=4
-    ;;
-  bellagio)
-    AC_DEFINE(USE_OMX_TARGET_BELLAGIO, 1, [Use Bellagio OpenMAX IL target])
-    ;;
-  none|*)
-    AC_ERROR([invalid OpenMAX IL target, you must specify one of --with-omx-target={generic,rpi,bellagio}])
-    ;;
-esac
-AM_CONDITIONAL(USE_OMX_TARGET_GENERIC, test "x$ac_cv_omx_target" = "xgeneric")
-AM_CONDITIONAL(USE_OMX_TARGET_BELLAGIO, test "x$ac_cv_omx_target" = "xbellagio")
-AM_CONDITIONAL(USE_OMX_TARGET_RPI, test "x$ac_cv_omx_target" = "xrpi")
 
 AC_ARG_WITH([omx-struct-packing],
         AS_HELP_STRING([--with-omx-struct-packing],[Force OpenMAX struct packing, (default is none)]),
