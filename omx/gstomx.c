@@ -230,7 +230,7 @@ gst_omx_component_handle_messages (GstOMXComponent * comp)
             comp->name, gst_omx_state_to_string (msg->content.state_set.state));
         comp->state = msg->content.state_set.state;
         if (comp->state == comp->pending_state)
-          comp->pending_state = OMX_StateInvalid;
+          comp->pending_state = OMX_StateLoaded;
         break;
       }
       case GST_OMX_MESSAGE_FLUSH:{
@@ -709,7 +709,7 @@ gst_omx_component_new (GstObject * parent, const gchar * core_name,
   g_cond_init (&comp->messages_cond);
 
   g_queue_init (&comp->messages);
-  comp->pending_state = OMX_StateInvalid;
+  comp->pending_state = OMX_StateLoaded;
   comp->last_error = OMX_ErrorNone;
 
   /* Set component role if any */
@@ -854,7 +854,7 @@ gst_omx_component_get_state (GstOMXComponent * comp, GstClockTime timeout)
   OMX_STATETYPE ret;
   gboolean signalled = TRUE;
 
-  g_return_val_if_fail (comp != NULL, OMX_StateInvalid);
+  g_return_val_if_fail (comp != NULL, OMX_StateLoaded);
 
   GST_DEBUG_OBJECT (comp->parent, "Getting state of %s", comp->name);
 
@@ -863,19 +863,19 @@ gst_omx_component_get_state (GstOMXComponent * comp, GstClockTime timeout)
   gst_omx_component_handle_messages (comp);
 
   ret = comp->state;
-  if (comp->pending_state == OMX_StateInvalid)
+  if (comp->pending_state == OMX_StateLoaded)
     goto done;
 
   if (comp->last_error != OMX_ErrorNone) {
     GST_ERROR_OBJECT (comp->parent, "Component %s in error state: %s (0x%08x)",
         comp->name, gst_omx_error_to_string (comp->last_error),
         comp->last_error);
-    ret = OMX_StateInvalid;
+    ret = OMX_StateLoaded;
     goto done;
   }
 
   while (signalled && comp->last_error == OMX_ErrorNone
-      && comp->pending_state != OMX_StateInvalid) {
+      && comp->pending_state != OMX_StateLoaded) {
 
     signalled = gst_omx_component_wait_message (comp, timeout);
     if (signalled)
@@ -888,16 +888,16 @@ gst_omx_component_get_state (GstOMXComponent * comp, GstClockTime timeout)
           "%s got error while waiting for state change: %s (0x%08x)",
           comp->name, gst_omx_error_to_string (comp->last_error),
           comp->last_error);
-      ret = OMX_StateInvalid;
-    } else if (comp->pending_state == OMX_StateInvalid) {
+      ret = OMX_StateLoaded;
+    } else if (comp->pending_state == OMX_StateLoaded) {
       /* State change finished and everything's fine */
       ret = comp->state;
     } else {
-      ret = OMX_StateInvalid;
+      ret = OMX_StateLoaded;
       g_assert_not_reached ();
     }
   } else {
-    ret = OMX_StateInvalid;
+    ret = OMX_StateLoaded;
     GST_WARNING_OBJECT (comp->parent, "%s timeout while waiting for state "
         "change", comp->name);
   }
@@ -1872,7 +1872,7 @@ gst_omx_port_set_enabled_unlocked (GstOMXPort * port, gboolean enabled)
   if (port->enabled_pending || port->disabled_pending) {
     GST_ERROR_OBJECT (comp->parent, "%s port %d enabled/disabled pending "
         "already", comp->name, port->index);
-    err = OMX_ErrorInvalidState;
+    err = OMX_ErrorUndefined;
     goto done;
   }
 
@@ -2322,8 +2322,6 @@ gst_omx_error_to_string (OMX_ERRORTYPE err)
       return "Invalid component name";
     case OMX_ErrorComponentNotFound:
       return "Component not found";
-    case OMX_ErrorInvalidComponent:
-      return "Invalid component";
     case OMX_ErrorBadParameter:
       return "Bad parameter";
     case OMX_ErrorNotImplemented:
@@ -2334,10 +2332,12 @@ gst_omx_error_to_string (OMX_ERRORTYPE err)
       return "Overflow";
     case OMX_ErrorHardware:
       return "Hardware";
-    case OMX_ErrorInvalidState:
-      return "Invalid state";
     case OMX_ErrorStreamCorrupt:
       return "Stream corrupt";
+    case OMX_ErrorStreamCorruptStalled:
+      return "Stream corrupt stalled";
+    case OMX_ErrorStreamCorruptFatal:
+      return "Stream corrupt fatal";
     case OMX_ErrorPortsNotCompatible:
       return "Ports not compatible";
     case OMX_ErrorResourcesLost:
@@ -2354,12 +2354,6 @@ gst_omx_error_to_string (OMX_ERRORTYPE err)
       return "Same state";
     case OMX_ErrorResourcesPreempted:
       return "Resources preempted";
-    case OMX_ErrorPortUnresponsiveDuringAllocation:
-      return "Port unresponsive during allocation";
-    case OMX_ErrorPortUnresponsiveDuringDeallocation:
-      return "Port unresponsive during deallocation";
-    case OMX_ErrorPortUnresponsiveDuringStop:
-      return "Port unresponsive during stop";
     case OMX_ErrorIncorrectStateTransition:
       return "Incorrect state transition";
     case OMX_ErrorIncorrectStateOperation:
@@ -2380,10 +2374,6 @@ gst_omx_error_to_string (OMX_ERRORTYPE err)
       return "Macroblock errors in frame";
     case OMX_ErrorFormatNotDetected:
       return "Format not detected";
-    case OMX_ErrorContentPipeOpenFailed:
-      return "Content pipe open failed";
-    case OMX_ErrorContentPipeCreationFailed:
-      return "Content pipe creation failed";
     case OMX_ErrorSeperateTablesUsed:
       return "Separate tables used";
     case OMX_ErrorTunnelingUnsupported:
@@ -2405,8 +2395,6 @@ const gchar *
 gst_omx_state_to_string (OMX_STATETYPE state)
 {
   switch (state) {
-    case OMX_StateInvalid:
-      return "Invalid";
     case OMX_StateLoaded:
       return "Loaded";
     case OMX_StateIdle:

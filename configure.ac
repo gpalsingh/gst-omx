@@ -167,7 +167,7 @@ AC_ARG_WITH([omx-header-path],
         [omx_header_path="$withval"], [omx_header_path="none"])
 
 if test x"$omx_header_path" != x"none"; then
-    CPPFLAGS="$CPPFLAGS -I$omx_header_path"
+    CPPFLAGS="-I$omx_header_path $CPPFLAGS"
 fi
 AC_ARG_WITH([omx-target],
         AS_HELP_STRING([--with-omx-target],[Use this OpenMAX IL target (generic, bellagio, rpi, tizonia)]),
@@ -201,6 +201,7 @@ AM_CONDITIONAL(USE_OMX_TARGET_TIZONIA, test "x$ac_cv_omx_target" = "xtizonia")
 
 if test "x$ac_cv_omx_target" = "xtizonia"; then
     OMX_DIR="tizonia/"
+    AC_SUBST(OMX_DIR)
 fi
 
 dnl Check for external OpenMAX IL headers

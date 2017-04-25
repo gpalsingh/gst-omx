@@ -66,13 +66,13 @@ noinst_HEADERS = \
 
 if USE_OMX_TARGET_TIZONIA
 if HAVE_EXTERNAL_OMX
-    OMX_INCLUDEPATH = -I/usr/local/include/tizonia
+    OMX_INCLUDEPATH = -I/usr/include/$(OMX_DIR)
 else
-    OMX_INCLUDEPATH = -I$(top_srcdir)/omx/openmax/tizonia
+    OMX_INCLUDEPATH = -I$(top_srcdir)/omx/openmax/$(OMX_DIR)
 endif
 else
 if !HAVE_EXTERNAL_OMX
-    OMX_INCLUDEPATH = -I$(abs_srcdir)/openmax
+    OMX_INCLUDEPATH = -I$(abs_srcdir)/openmax/
 endif
 endif
 

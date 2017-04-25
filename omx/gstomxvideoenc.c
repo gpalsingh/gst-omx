@@ -364,7 +364,7 @@ gst_omx_video_enc_shutdown (GstOMXVideoEnc * self)
   GST_DEBUG_OBJECT (self, "Shutting down encoder");
 
   state = gst_omx_component_get_state (self->enc, 0);
-  if (state > OMX_StateLoaded || state == OMX_StateInvalid) {
+  if (state > OMX_StateLoaded) {
     if (state > OMX_StateIdle) {
       gst_omx_component_set_state (self->enc, OMX_StateIdle);
       gst_omx_component_get_state (self->enc, 5 * GST_SECOND);

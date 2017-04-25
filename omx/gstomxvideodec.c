@@ -284,7 +284,7 @@ gst_omx_video_dec_shutdown (GstOMXVideoDec * self)
 #endif
 
   state = gst_omx_component_get_state (self->dec, 0);
-  if (state > OMX_StateLoaded || state == OMX_StateInvalid) {
+  if (state > OMX_StateLoaded) {
     if (state > OMX_StateIdle) {
       gst_omx_component_set_state (self->dec, OMX_StateIdle);
       gst_omx_component_get_state (self->dec, 5 * GST_SECOND);

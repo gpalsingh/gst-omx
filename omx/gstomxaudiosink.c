@@ -344,7 +344,7 @@ gst_omx_audio_sink_close (GstAudioSink * audiosink)
   GST_DEBUG_OBJECT (self, "Closing audio sink");
 
   state = gst_omx_component_get_state (self->comp, 0);
-  if (state > OMX_StateLoaded || state == OMX_StateInvalid) {
+  if (state > OMX_StateLoaded) {
     if (state > OMX_StateIdle) {
       gst_omx_component_set_state (self->comp, OMX_StateIdle);
       gst_omx_component_get_state (self->comp, 5 * GST_SECOND);
