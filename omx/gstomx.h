@@ -89,6 +89,9 @@ G_BEGIN_DECLS
 } G_STMT_END
 #endif
 
+/* Replace removed state */
+#define OMX_StateInvalid OMX_StateReserved_0x00000000
+
 /* Different hacks that are required to work around
  * bugs in different OpenMAX implementations
  */
