@@ -64,8 +64,10 @@ noinst_HEADERS = \
 	gstomxanalogaudiosink.h \
 	gstomxhdmiaudiosink.h 	
 
-if !HAVE_EXTERNAL_OMX
+if USE_OMX_TARGET_BELLAGIO
+if !HAVE_EXTERNAL_OMX_BELLAGIO
 OMX_INCLUDEPATH = -I$(abs_srcdir)/openmax
+endif
 endif
 
 libgstomx_la_CFLAGS = \

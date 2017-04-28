@@ -169,13 +169,13 @@ AC_ARG_WITH([omx-header-path],
 if test x"$omx_header_path" != x"none"; then
     CPPFLAGS="$CPPFLAGS -I$omx_header_path"
 fi
-dnl Check for external OpenMAX IL headers
-AC_CHECK_HEADER([OMX_Core.h], [HAVE_EXTERNAL_OMX=yes], [HAVE_EXTERNAL_OMX=no], [AC_INCLUDES_DEFAULT])
-AM_CONDITIONAL(HAVE_EXTERNAL_OMX, test "x$HAVE_EXTERNAL_OMX" = "xyes")
+dnl Check for external OpenMAX IL bellagio headers
+AC_CHECK_HEADER([OMX_Core.h], [HAVE_EXTERNAL_OMX_BELLAGIO=yes], [HAVE_EXTERNAL_OMX_BELLAGIO=no], [AC_INCLUDES_DEFAULT])
+AM_CONDITIONAL(HAVE_EXTERNAL_OMX_BELLAGIO, test "x$HAVE_EXTERNAL_OMX_BELLAGIO" = "xyes")
 
 dnl Our internal OpenMAX IL headers have OMX_VideoExt.h
 HAVE_VIDEO_EXT=yes
-if test "x$HAVE_EXTERNAL_OMX" = "xyes"; then
+if test "x$HAVE_EXTERNAL_OMX_BELLAGIO" = "xyes"; then
     AC_CHECK_HEADER([OMX_VideoExt.h], [HAVE_VIDEO_EXT=yes], [HAVE_VIDEO_EXT=no], [AC_INCLUDES_DEFAULT])
 fi
 
@@ -238,12 +238,16 @@ case "${ac_cv_omx_target}" in
   bellagio)
     AC_DEFINE(USE_OMX_TARGET_BELLAGIO, 1, [Use Bellagio OpenMAX IL target])
     ;;
+  tizonia)
+    AC_DEFINE(USE_OMX_TARGET_TIZONIA, 1, [Use Tizonia OpenMAX IL target])
+    ;;
   none|*)
     AC_ERROR([invalid OpenMAX IL target, you must specify one of --with-omx-target={generic,rpi,bellagio}])
     ;;
 esac
 AM_CONDITIONAL(USE_OMX_TARGET_GENERIC, test "x$ac_cv_omx_target" = "xgeneric")
 AM_CONDITIONAL(USE_OMX_TARGET_BELLAGIO, test "x$ac_cv_omx_target" = "xbellagio")
+AM_CONDITIONAL(USE_OMX_TARGET_TIZONIA, test "x$ac_cv_omx_target" = "xtizonia")
 AM_CONDITIONAL(USE_OMX_TARGET_RPI, test "x$ac_cv_omx_target" = "xrpi")
 
 AC_ARG_WITH([omx-struct-packing],
@@ -259,6 +263,14 @@ elif test x"$ac_cv_omx_target_struct_packing" != x"none"; then
 fi
 
 dnl *** set variables based on configure arguments ***
+
+dnl settings for tizonia target
+if test "x$ac_cv_omx_target" = "xtizonia"; then
+    PKG_CHECK_MODULES([TIZONIA], [tizilheaders])
+    CPPFLAGS="$CPPFLAGS $TIZONIA_CFLAGS"
+    HAVE_VP8=no
+    HAVE_THEORA=no
+fi
 
 dnl set license and copyright notice
 GST_LICENSE="LGPL"
