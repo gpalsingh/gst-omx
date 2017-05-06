@@ -57,8 +57,10 @@
 #include <OMX_Broadcom.h>
 #endif
 
+#ifdef USE_OMX_TARGET_BELLAGIO
 #ifdef HAVE_VIDEO_EXT
 #include <OMX_VideoExt.h>
+#endif
 #endif
 
 #ifdef GST_OMX_STRUCT_PACKING
